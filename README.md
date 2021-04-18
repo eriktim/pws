@@ -1,0 +1,5 @@
+# PWS
+
+```
+sbt compile assembly
+```

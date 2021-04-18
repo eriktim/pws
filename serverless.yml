@@ -1,0 +1,22 @@
+service: pws-api
+org: timmers.io
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: java11
+  stage: dev
+  region: eu-west-1
+  lambdaHashingVersion: 20201221
+
+package:
+  artifact: target/scala-2.13/root-assembly-0.1.0-SNAPSHOT.jar
+
+functions:
+  logMeasurement:
+    handler: io.timmers.pws.Function::logMeasurement
+    events:
+      - httpApi:
+          path: /log
+          method: get

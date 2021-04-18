@@ -1,5 +1,5 @@
-val zioVersion     = "1.0.4-2"
-val zioHttpVersion = "1.0.0.0-RC13"
+val zioVersion    = "1.0.4-2"
+val zioJsonVersion = "0.1.4"
 
 scalaVersion := "2.13.3"
 
@@ -22,7 +22,7 @@ lazy val pwsApi =
   module("pws-api", "pws")
     .settings(
       libraryDependencies ++= Seq(
-        "io.d11" %% "zhttp" % zioHttpVersion
+        "dev.zio" %% "zio-json" % zioJsonVersion
       )
     )
 
@@ -56,3 +56,8 @@ def module(moduleName: String, fileName: String): Project =
         "com.github.vovapolu"  %% "scaluzzi"         % "0.1.12"
       )
     )
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}
