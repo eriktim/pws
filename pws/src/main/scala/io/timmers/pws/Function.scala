@@ -9,8 +9,7 @@ import zio.json.{ DeriveJsonDecoder, DeriveJsonEncoder, EncoderOps, JsonDecoder,
 import scala.io.Source
 
 class Function {
-  implicit val decoder: JsonDecoder[Measurement] =
-    DeriveJsonDecoder.gen[Measurement]
+  implicit val decoder: JsonDecoder[Measurement]          = DeriveJsonDecoder.gen[Measurement]
   implicit val requestDecoder: JsonDecoder[HttpRequest]   = DeriveJsonDecoder.gen[HttpRequest]
   implicit val responseEncoder: JsonEncoder[HttpResponse] = DeriveJsonEncoder.gen[HttpResponse]
 

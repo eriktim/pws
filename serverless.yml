@@ -1,5 +1,5 @@
 service: pws-api
-org: timmers.io
+org: eriktim
 
 frameworkVersion: '2'
 
@@ -20,3 +20,36 @@ functions:
       - httpApi:
           path: /log
           method: get
+
+resources:
+  Resources:
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Comment: CloudFront distribution to serve logging over HTTP
+          DefaultCacheBehavior:
+            TargetOriginId: PwsLog
+            ViewerProtocolPolicy: 'allow-all'
+            DefaultTTL: 0
+            MinTTL: 0
+            MaxTTL: 0
+            ForwardedValues:
+              QueryString: true
+          PriceClass: PriceClass_100
+          Enabled: true
+          Origins:
+            - Id: PwsLog
+              DomainName:
+                Fn::Join:
+                  - "."
+                  - - Ref: HttpApi
+                    - execute-api
+                    - Ref: AWS::Region
+                    - amazonaws.com
+              CustomOriginConfig:
+                HTTPPort: 80
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
+                OriginSSLProtocols:
+                  - TLSv1.2
