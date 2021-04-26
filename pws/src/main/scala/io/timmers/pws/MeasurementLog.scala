@@ -5,7 +5,7 @@ import zio.stream.{ Transducer, ZSink, ZStream }
 import zio.{ Has, ZIO, ZLayer }
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{ Paths, StandardOpenOption }
+import java.nio.file.{ Path, Paths, StandardOpenOption }
 
 trait MeasurementLog {
   def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit]
@@ -20,28 +20,28 @@ object MeasurementLog {
   def read(): ZStream[Has[MeasurementLog] with Blocking, Throwable, Measurement] =
     ZStream.accessStream(_.get.read())
 
-  def localFile(filename: String): ZLayer[Blocking, Nothing, Has[MeasurementLog]] = ZLayer.succeed {
-    val path = Paths.get(filename)
-    new MeasurementLog {
-      override def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit] = {
-        val sink =
-          ZSink.fromFile(
-            path,
-            options =
-              Set(StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)
-          )
-        ZStream
-          .fromIterable(s"${measurement.line}\n".getBytes(StandardCharsets.UTF_8))
-          .run(sink)
-          .unit
-      }
-
-      override def read(): ZStream[Blocking, Throwable, Measurement] =
-        ZStream
-          .fromFile(path)
-          .aggregate(Transducer.utf8Decode)
-          .aggregate(Transducer.splitLines)
-          .map(line => Measurement(line))
+  case class LocalMeasurementLog(path: Path) extends MeasurementLog {
+    override def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit] = {
+      val sink =
+        ZSink.fromFile(
+          path,
+          options =
+            Set(StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)
+        )
+      ZStream
+        .fromIterable(s"${measurement.line}\n".getBytes(StandardCharsets.UTF_8))
+        .run(sink)
+        .unit
     }
+
+    override def read(): ZStream[Blocking, Throwable, Measurement] =
+      ZStream
+        .fromFile(path)
+        .aggregate(Transducer.utf8Decode)
+        .aggregate(Transducer.splitLines)
+        .map(line => Measurement(line))
   }
+
+  def localFile(filename: String): ZLayer[Blocking, Nothing, Has[MeasurementLog]] =
+    ZLayer.succeed(LocalMeasurementLog(Paths.get(filename)))
 }

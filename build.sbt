@@ -1,5 +1,5 @@
 val zioVersion    = "1.0.4-2"
-val zioJsonVersion = "0.1.4"
+val zioNioVersion = "1.0.0-RC10"
 
 scalaVersion := "2.13.3"
 
@@ -22,7 +22,6 @@ lazy val pwsApi =
   module("pws-api", "pws")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-json" % zioJsonVersion
       )
     )
 
@@ -56,8 +55,3 @@ def module(moduleName: String, fileName: String): Project =
         "com.github.vovapolu"  %% "scaluzzi"         % "0.1.12"
       )
     )
-
-assemblyMergeStrategy in assembly := {
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case x => MergeStrategy.first
-}
