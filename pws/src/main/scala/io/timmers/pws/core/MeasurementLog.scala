@@ -1,11 +1,12 @@
-package io.timmers.pws
-
-import zio.blocking.Blocking
-import zio.stream.{ Transducer, ZSink, ZStream }
-import zio.{ Has, ZIO, ZLayer }
+package io.timmers.pws.core
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{ Paths, StandardOpenOption }
+
+import zio.blocking.Blocking
+import zio.json.{ DecoderOps, EncoderOps }
+import zio.stream.{ Transducer, ZSink, ZStream }
+import zio.{ Has, ZIO, ZLayer }
 
 trait MeasurementLog {
   def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit]
@@ -31,7 +32,7 @@ object MeasurementLog {
               Set(StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)
           )
         ZStream
-          .fromIterable(s"${measurement.line}\n".getBytes(StandardCharsets.UTF_8))
+          .fromIterable(s"${measurement.toJson}\n".getBytes(StandardCharsets.UTF_8))
           .run(sink)
           .unit
       }
@@ -41,7 +42,12 @@ object MeasurementLog {
           .fromFile(path)
           .aggregate(Transducer.utf8Decode)
           .aggregate(Transducer.splitLines)
-          .map(line => Measurement(line))
+          .flatMap(line =>
+            line.fromJson[Measurement] match {
+              case Left(error)        => ZStream.fail(new RuntimeException(error))
+              case Right(measurement) => ZStream.succeed(measurement)
+            }
+          )
     }
   }
 }

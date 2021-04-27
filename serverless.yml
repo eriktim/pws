@@ -15,7 +15,7 @@ package:
 
 functions:
   logMeasurement:
-    handler: io.timmers.pws.Function::logMeasurement
+    handler: io.timmers.pws.function.Function::logMeasurement
     events:
       - httpApi:
           path: /log
