@@ -6,6 +6,7 @@ import zio.json.{ DeriveJsonDecoder, DeriveJsonEncoder, JsonDecoder, JsonEncoder
 
 case class Measurement(
   timestamp: Instant,
+  absoluteBarometricPressure: Double,
   barometricPressure: Double,
   rain: Double,
   rainDaily: Double,
@@ -16,6 +17,7 @@ case class Measurement(
   windChill: Double,
   humidity: Int,
   solarRadiation: Double,
+  uvIndex: Int,
   windDirection: Int,
   windGust: Double,
   windSpeed: Double,

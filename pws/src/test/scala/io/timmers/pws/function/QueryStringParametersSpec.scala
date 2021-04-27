@@ -40,6 +40,7 @@ object QueryStringParametersSpec extends DefaultRunnableSpec {
         )
         val measurement = Measurement(
           Instant.EPOCH,
+          101305.5,
           101264.9778,
           0.0,
           0.0,
@@ -50,6 +51,7 @@ object QueryStringParametersSpec extends DefaultRunnableSpec {
           11.888888888888888,
           41,
           11.62,
+          0,
           77,
           0.983488,
           0.715264,

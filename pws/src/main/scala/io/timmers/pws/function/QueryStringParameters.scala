@@ -62,20 +62,22 @@ case class QueryStringParameters(
     .withZone(ZoneOffset.UTC);
 
   def toMeasurement: Either[String, Measurement] = for {
-    timestamp          <- timestamp(dateutc)
-    atmosphericPressure = inchOfMercuryToPascal(baromin)
-    rain                = inchToMm(rainin)
-    rainDaily           = inchToMm(dailyrainin)
-    rainWeekly          = inchToMm(weeklyrainin)
-    rainMonthly         = inchToMm(monthlyrainin)
-    temperature         = fahrenheitToCelcius(tempf)
-    dewPoint            = fahrenheitToCelcius(dewptf)
-    windChill           = fahrenheitToCelcius(windchillf)
-    windGust            = mphToMps(windgustmph)
-    windSpeed           = mphToMps(windspeedmph)
-    indoorTemperature   = fahrenheitToCelcius(indoortempf)
+    timestamp                  <- timestamp(dateutc)
+    absoluteAtmosphericPressure = inchOfMercuryToPascal(absbaromin)
+    atmosphericPressure         = inchOfMercuryToPascal(baromin)
+    rain                        = inchToMm(rainin)
+    rainDaily                   = inchToMm(dailyrainin)
+    rainWeekly                  = inchToMm(weeklyrainin)
+    rainMonthly                 = inchToMm(monthlyrainin)
+    temperature                 = fahrenheitToCelcius(tempf)
+    dewPoint                    = fahrenheitToCelcius(dewptf)
+    windChill                   = fahrenheitToCelcius(windchillf)
+    windGust                    = mphToMps(windgustmph)
+    windSpeed                   = mphToMps(windspeedmph)
+    indoorTemperature           = fahrenheitToCelcius(indoortempf)
   } yield Measurement(
     timestamp,
+    absoluteAtmosphericPressure,
     atmosphericPressure,
     rain,
     rainDaily,
@@ -86,6 +88,7 @@ case class QueryStringParameters(
     windChill,
     humidity,
     solarradiation,
+    uv,
     winddir,
     windGust,
     windSpeed,
