@@ -5,9 +5,9 @@ import java.nio.charset.StandardCharsets
 
 import scala.io.Source
 
+import zio.{ Runtime }
 import zio.console.putStrLn
 import zio.json.{ DecoderOps, EncoderOps }
-import zio.{ Runtime, ZIO }
 
 class Function {
   def logMeasurement(input: InputStream, output: OutputStream): Unit = {
@@ -15,10 +15,15 @@ class Function {
     val response = readParams(jsonString)
       .flatMap(_.toMeasurement)
       .fold(
-        error => ZIO.succeed(HttpResponse(error, statusCode = 400)),
+        error => putStrLn(s"FAILED $error").as(HttpResponse(error, statusCode = 400)),
         measurement => putStrLn(s"MEASUREMENT $measurement").as(HttpResponse("ACK"))
       )
-    output.write(Runtime.default.unsafeRun(response).toJson.getBytes(StandardCharsets.UTF_8))
+    output.write(
+      Runtime.default
+        .unsafeRun(response)
+        .toJson
+        .getBytes(StandardCharsets.UTF_8)
+    )
   }
 
   private def readParams(input: String): Either[String, QueryStringParameters] =
