@@ -1,6 +1,7 @@
 package io.timmers.pws.core
 
 import java.time.Instant
+import java.util.UUID
 
 import zio.Chunk
 import zio.test.Assertion.equalTo
@@ -22,11 +23,14 @@ object MeasurementLogSpec extends DefaultRunnableSpec {
           _     <- MeasurementLog.append(measurement3)
         } yield assert(lines)(equalTo(Chunk(measurement1, measurement2)))
       }
-    ).provideCustomLayer(liveEnvironment >>> MeasurementLog.localFile("/tmp/pws-test.log"))
+    ).provideCustomLayer(
+      liveEnvironment >>> MeasurementLog.localFile(s"/tmp/pws-${UUID.randomUUID()}.test")
+    )
 
   private def measurement(
     timestamp: Instant = Instant.EPOCH,
-    barometricPressure: Double = 0.0,
+    absoluteAtmosphericPressure: Double = 0.0,
+    atmosphericPressure: Double = 0.0,
     rain: Double = 0.0,
     rainDaily: Double = 0.0,
     rainWeekly: Double = 0.0,
@@ -36,6 +40,7 @@ object MeasurementLogSpec extends DefaultRunnableSpec {
     windChill: Double = 0.0,
     humidity: Int = 0,
     solarRadiation: Double = 0.0,
+    uvIndex: Int = 0,
     windDirection: Int = 0,
     windGust: Double = 0.0,
     windSpeed: Double = 0.0,
@@ -43,7 +48,8 @@ object MeasurementLogSpec extends DefaultRunnableSpec {
     indoorHumidity: Int = 0
   ) = Measurement(
     timestamp,
-    barometricPressure,
+    absoluteAtmosphericPressure,
+    atmosphericPressure,
     rain,
     rainDaily,
     rainWeekly,
@@ -53,6 +59,7 @@ object MeasurementLogSpec extends DefaultRunnableSpec {
     windChill,
     humidity,
     solarRadiation,
+    uvIndex,
     windDirection,
     windGust,
     windSpeed,
