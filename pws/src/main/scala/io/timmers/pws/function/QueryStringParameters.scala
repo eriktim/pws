@@ -1,7 +1,6 @@
 package io.timmers.pws.function
 
 import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
 import java.time.{ Instant, ZoneOffset }
 
 import scala.util.Try
@@ -57,51 +56,57 @@ case class QueryStringParameters(
 ) {
   private val DateTimeFormat = new DateTimeFormatterBuilder()
     .appendPattern("yyyy-MM-dd HH:mm:ss")
-    .parseDefaulting(ChronoField.NANO_OF_DAY, 0)
     .toFormatter()
     .withZone(ZoneOffset.UTC);
 
-  def toMeasurement: Either[String, Measurement] = for {
-    timestamp                  <- timestamp(dateutc)
-    absoluteAtmosphericPressure = inchOfMercuryToPascal(absbaromin)
-    atmosphericPressure         = inchOfMercuryToPascal(baromin)
-    rain                        = inchToMm(rainin)
-    rainDaily                   = inchToMm(dailyrainin)
-    rainWeekly                  = inchToMm(weeklyrainin)
-    rainMonthly                 = inchToMm(monthlyrainin)
-    temperature                 = fahrenheitToCelcius(tempf)
-    dewPoint                    = fahrenheitToCelcius(dewptf)
-    windChill                   = fahrenheitToCelcius(windchillf)
-    windGust                    = mphToMps(windgustmph)
-    windSpeed                   = mphToMps(windspeedmph)
-    indoorTemperature           = fahrenheitToCelcius(indoortempf)
-  } yield Measurement(
-    timestamp,
-    absoluteAtmosphericPressure,
-    atmosphericPressure,
-    rain,
-    rainDaily,
-    rainWeekly,
-    rainMonthly,
-    temperature,
-    dewPoint,
-    windChill,
-    humidity,
-    solarradiation,
-    uv,
-    winddir,
-    windGust,
-    windSpeed,
-    indoorTemperature,
-    indoorhumidity
-  )
+  def toMeasurement: Either[String, Measurement] =
+    for {
+      timestamp                  <- timestamp(dateutc)
+      absoluteAtmosphericPressure = inchOfMercuryToPascal(absbaromin)
+      atmosphericPressure         = inchOfMercuryToPascal(baromin)
+      rain                        = inchToMm(rainin)
+      rainDaily                   = inchToMm(dailyrainin)
+      rainWeekly                  = inchToMm(weeklyrainin)
+      rainMonthly                 = inchToMm(monthlyrainin)
+      temperature                 = fahrenheitToCelcius(tempf)
+      dewPoint                    = fahrenheitToCelcius(dewptf)
+      windChill                   = fahrenheitToCelcius(windchillf)
+      windGust                    = mphToMps(windgustmph)
+      windSpeed                   = mphToMps(windspeedmph)
+      indoorTemperature           = fahrenheitToCelcius(indoortempf)
+    } yield Measurement(
+      timestamp,
+      absoluteAtmosphericPressure,
+      atmosphericPressure,
+      rain,
+      rainDaily,
+      rainWeekly,
+      rainMonthly,
+      temperature,
+      dewPoint,
+      windChill,
+      humidity,
+      solarradiation,
+      uv,
+      winddir,
+      windGust,
+      windSpeed,
+      indoorTemperature,
+      indoorhumidity
+    )
 
   private def timestamp(dateUtc: String): Either[String, Instant] =
     dateUtc match {
       case "now" => Left("Date 'now' is not supported")
       case _ =>
         Try(Instant.from(DateTimeFormat.parse(dateUtc)))
-          .fold(_ => Left(s"Invalid date: $dateUtc"), Right(_))
+          .fold(
+            failure => {
+              println(failure) // TODO logging
+              Left(s"Invalid date: $dateUtc")
+            },
+            Right(_)
+          )
     }
 
   private def inchOfMercuryToPascal(inches: Double): Double =
