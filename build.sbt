@@ -1,4 +1,4 @@
-val zioVersion    = "1.0.4-2"
+val zioVersion     = "1.0.4-2"
 val zioJsonVersion = "0.1.4"
 
 scalaVersion := "2.13.3"
@@ -59,5 +59,5 @@ def module(moduleName: String, fileName: String): Project =
 
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case x => MergeStrategy.first
+  case x                             => MergeStrategy.first
 }
