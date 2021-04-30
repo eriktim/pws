@@ -5,7 +5,9 @@ import java.nio.charset.StandardCharsets
 
 import scala.io.Source
 
-import zio.{ Runtime }
+import io.timmers.pws.core.MeasurementLog
+
+import zio.Runtime
 import zio.console.putStrLn
 import zio.json.{ DecoderOps, EncoderOps }
 
@@ -16,11 +18,15 @@ class Function {
       .flatMap(_.toMeasurement)
       .fold(
         error => putStrLn(s"FAILED $error").as(HttpResponse(error, statusCode = 400)),
-        measurement => putStrLn(s"MEASUREMENT $measurement").as(HttpResponse("ACK"))
+        measurement =>
+          for {
+            _ <- putStrLn(s"MEASUREMENT $measurement")
+            _ <- MeasurementLog.append(measurement)
+          } yield HttpResponse("ACK")
       )
     output.write(
       Runtime.default
-        .unsafeRun(response)
+        .unsafeRun(response.provideCustomLayer(MeasurementLog.local("/tmp/pws")))
         .toJson
         .getBytes(StandardCharsets.UTF_8)
     )
