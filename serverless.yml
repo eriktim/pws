@@ -1,4 +1,4 @@
-service: pws-api
+service: weather-station
 org: eriktim
 
 frameworkVersion: '2'
@@ -6,7 +6,7 @@ frameworkVersion: '2'
 provider:
   name: aws
   runtime: java11
-  stage: dev
+  stage: ${opt:stage, 'dev'}
   region: eu-west-1
   lambdaHashingVersion: 20201221
 
@@ -27,7 +27,7 @@ resources:
       Type: AWS::CloudFront::Distribution
       Properties:
         DistributionConfig:
-          Comment: CloudFront distribution to serve logging over HTTP
+          Comment: CloudFront ${self:provider.stage} distribution to serve logging over HTTP
           DefaultCacheBehavior:
             TargetOriginId: PwsLog
             ViewerProtocolPolicy: 'allow-all'
