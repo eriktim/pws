@@ -1,7 +1,7 @@
 package io.timmers.pws.core
 
+import java.nio.file.Files
 import java.time.Instant
-import java.util.UUID
 
 import zio.Chunk
 import zio.test.Assertion.equalTo
@@ -24,7 +24,7 @@ object MeasurementLogSpec extends DefaultRunnableSpec {
         } yield assert(lines)(equalTo(Chunk(measurement1, measurement2)))
       }
     ).provideCustomLayer(
-      liveEnvironment >>> MeasurementLog.localFile(s"/tmp/pws-${UUID.randomUUID()}.test")
+      liveEnvironment >>> MeasurementLog.local(Files.createTempDirectory("pws-").toString)
     )
 
   private def measurement(
