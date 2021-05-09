@@ -1,11 +1,13 @@
 package io.timmers.pws.core
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{ Files, Paths, StandardOpenOption }
+import java.nio.file.{ Files, Path, Paths, StandardOpenOption }
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.stream.Stream
 
 import zio.blocking.Blocking
-import zio.json.{ DecoderOps, EncoderOps }
-import zio.stream.{ Transducer, ZSink, ZStream }
+import zio.stream.{ Transducer, ZStream }
 import zio.{ Has, ZIO, ZLayer }
 
 trait MeasurementLog {
@@ -21,41 +23,53 @@ object MeasurementLog {
   def read(): ZStream[Has[MeasurementLog] with Blocking, Throwable, Measurement] =
     ZStream.accessStream(_.get.read())
 
-  def local(path: String): ZLayer[Blocking, Nothing, Has[MeasurementLog]] = {
-    val dir = Paths.get(path)
-    if (!Files.exists(dir)) {
-      Files.createDirectories(dir)
-    }
+  def local(directory: String): ZLayer[Blocking, Nothing, Has[MeasurementLog]] =
     ZLayer.succeed {
       new MeasurementLog {
-        override def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit] = {
-          val sink =
-            ZSink.fromFile(
-              Paths.get(s"$path/pws.log"),
-              options = Set(
-                StandardOpenOption.CREATE,
-                StandardOpenOption.WRITE,
-                StandardOpenOption.APPEND
-              )
-            )
-          ZStream
-            .fromIterable(s"${measurement.toJson}\n".getBytes(StandardCharsets.UTF_8))
-            .run(sink)
-            .unit
+        override def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit] = ZIO.effect {
+          val timestamp = measurement.timestamp.atZone(ZoneOffset.UTC)
+          val path = Paths.get(
+            s"$directory/${timestamp.getYear}/${DateTimeFormatter.ISO_LOCAL_DATE.format(timestamp)}.log"
+          )
+          if (!Files.exists(path)) {
+            if (!Files.exists(path.getParent)) {
+              Files.createDirectories(path.getParent)
+            }
+            Files.writeString(path, s"${measurement.header}\n")
+          }
+          Files.writeString(
+            path,
+            s"${measurement.toLine}\n",
+            StandardCharsets.UTF_8,
+            StandardOpenOption.APPEND
+          )
         }
 
-        override def read(): ZStream[Blocking, Throwable, Measurement] =
+        override def read(): ZStream[Blocking, Throwable, Measurement] = {
+          val paths = ZIO.effect {
+            val path = Paths.get(directory)
+            Files
+              .list(path)
+              .flatMap(p => if (Files.isDirectory(p)) Files.list(p) else Stream.empty)
+              .sorted()
+          }
           ZStream
-            .fromFile(Paths.get(s"$path/pws.log"))
+            .fromJavaStreamEffect(paths)
+            .flatMap(readFile)
+        }
+
+        private def readFile(path: Path): ZStream[Blocking, Throwable, Measurement] =
+          ZStream
+            .fromFile(path)
             .aggregate(Transducer.utf8Decode)
             .aggregate(Transducer.splitLines)
+            .drop(1)
             .flatMap(line =>
-              line.fromJson[Measurement] match {
-                case Left(error)        => ZStream.fail(new RuntimeException(error))
-                case Right(measurement) => ZStream.succeed(measurement)
-              }
+              Measurement
+                .fromLine(line)
+                .map(ZStream.succeed(_))
+                .getOrElse(ZStream.fail(new RuntimeException(s"Failed parsing $line")))
             )
       }
     }
-  }
 }

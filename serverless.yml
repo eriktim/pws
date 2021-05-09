@@ -9,6 +9,8 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: eu-west-1
   lambdaHashingVersion: 20201221
+  environment:
+    PWS_PATH: /mnt/efs
 
 package:
   artifact: target/scala-2.13/root-assembly-0.1.0-SNAPSHOT.jar
@@ -16,18 +18,142 @@ package:
 functions:
   logMeasurement:
     handler: io.timmers.pws.function.Function::logMeasurement
+    memorySize: 512
+    timeout: 15
+    fileSystemConfig:
+      localMountPath: ${self:provider.environment.PWS_PATH}
+      arn: !GetAtt AccessPoint.Arn
+    vpc:
+      securityGroupIds:
+        - !GetAtt Vpc.DefaultSecurityGroup
+      subnetIds:
+        - !Ref SubnetA
+        - !Ref SubnetB
+        - !Ref SubnetC
     events:
       - httpApi:
           path: /log
           method: get
+  rawMeasurements:
+    handler: io.timmers.pws.function.Function::rawMeasurements
+    memorySize: 512
+    timeout: 30
+    fileSystemConfig:
+      localMountPath: ${self:provider.environment.PWS_PATH}
+      arn: !GetAtt AccessPoint.Arn
+    vpc:
+      securityGroupIds:
+        - !GetAtt Vpc.DefaultSecurityGroup
+      subnetIds:
+        - !Ref SubnetA
+        - !Ref SubnetB
+        - !Ref SubnetC
+    events:
+      - httpApi:
+          path: /raw
+          method: get
 
 resources:
   Resources:
+    Vpc:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 172.31.0.0/16
+        EnableDnsHostnames: True
+        EnableDnsSupport: True
+        Tags:
+          - Key: Name
+            Value: ${self:provider.stage}-vpc
+    SubnetA:
+      Type: AWS::EC2::Subnet
+      Properties:
+        CidrBlock: 172.31.1.0/24
+        VpcId: !Ref Vpc
+        AvailabilityZone: "${self:provider.region}a"
+        Tags:
+          - Key: Name
+            Value: ${self:provider.stage}-subnet-a
+    SubnetB:
+      Type: AWS::EC2::Subnet
+      Properties:
+        CidrBlock: 172.31.2.0/24
+        VpcId: !Ref Vpc
+        AvailabilityZone: "${self:provider.region}b"
+        Tags:
+          - Key: Name
+            Value: ${self:provider.stage}-subnet-b
+    SubnetC:
+      Type: AWS::EC2::Subnet
+      Properties:
+        CidrBlock: 172.31.3.0/24
+        VpcId: !Ref Vpc
+        AvailabilityZone: "${self:provider.region}c"
+        Tags:
+          - Key: Name
+            Value: ${self:provider.stage}-subnet-c
+    ElasticFileSystem:
+      Type: AWS::EFS::FileSystem
+      Properties:
+        Encrypted: true
+        PerformanceMode: generalPurpose
+        FileSystemPolicy:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "elasticfilesystem:ClientMount"
+                - "elasticfilesystem:ClientWrite"
+              Principal:
+                AWS: "*"
+        FileSystemTags:
+          - Key: Name
+            Value: ${self:provider.stage}-filesystem
+    AccessPoint:
+      Type: AWS::EFS::AccessPoint
+      Properties:
+        FileSystemId: !Ref ElasticFileSystem
+        PosixUser:
+          Uid: "1000"
+          Gid: "1000"
+        RootDirectory:
+          CreationInfo:
+            OwnerGid: "1000"
+            OwnerUid: "1000"
+            Permissions: "0777"
+          Path: "/weather-station"
+        AccessPointTags:
+          - Key: Name
+            Value: ${self:provider.stage}-accesspoint
+      DependsOn:
+        - MountTargetA
+        - MountTargetB
+        - MountTargetC
+    MountTargetA:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref ElasticFileSystem
+        SecurityGroups:
+          - !GetAtt Vpc.DefaultSecurityGroup
+        SubnetId: !Ref SubnetA
+    MountTargetB:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref ElasticFileSystem
+        SecurityGroups:
+          - !GetAtt Vpc.DefaultSecurityGroup
+        SubnetId: !Ref SubnetB
+    MountTargetC:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref ElasticFileSystem
+        SecurityGroups:
+          - !GetAtt Vpc.DefaultSecurityGroup
+        SubnetId: !Ref SubnetC
     CloudFrontDistribution:
       Type: AWS::CloudFront::Distribution
       Properties:
         DistributionConfig:
-          Comment: CloudFront ${self:provider.stage} distribution to serve logging over HTTP
+          Comment: "[${self:provider.stage}] CloudFront distribution to serve logging over HTTP"
           DefaultCacheBehavior:
             TargetOriginId: PwsLog
             ViewerProtocolPolicy: 'allow-all'
@@ -53,3 +179,6 @@ resources:
                 OriginProtocolPolicy: https-only
                 OriginSSLProtocols:
                   - TLSv1.2
+        Tags:
+          - Key: Name
+            Value: ${self:provider.stage}-cloudfront

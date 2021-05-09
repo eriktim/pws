@@ -2,7 +2,7 @@ package io.timmers.pws.core
 
 import java.time.Instant
 
-import zio.json.{ DeriveJsonDecoder, DeriveJsonEncoder, JsonDecoder, JsonEncoder }
+import scala.util.Try
 
 case class Measurement(
   timestamp: Instant,
@@ -26,7 +26,61 @@ case class Measurement(
 )
 
 object Measurement {
-  implicit val encoder: JsonEncoder[Measurement] = DeriveJsonEncoder.gen[Measurement]
+  def fromLine(line: String): Option[Measurement] = line.split(",") match {
+    case Array(
+          timestamp,
+          absoluteBarometricPressure,
+          barometricPressure,
+          rain,
+          rainDaily,
+          rainWeekly,
+          rainMonthly,
+          temperature,
+          dewPoint,
+          windChill,
+          humidity,
+          solarRadiation,
+          uvIndex,
+          windDirection,
+          windGust,
+          windSpeed,
+          indoorTemperature,
+          indoorHumidity
+        ) =>
+      Try(
+        Measurement(
+          Instant.parse(timestamp),
+          absoluteBarometricPressure.toDouble,
+          barometricPressure.toDouble,
+          rain.toDouble,
+          rainDaily.toDouble,
+          rainWeekly.toDouble,
+          rainMonthly.toDouble,
+          temperature.toDouble,
+          dewPoint.toDouble,
+          windChill.toDouble,
+          humidity.toInt,
+          solarRadiation.toDouble,
+          uvIndex.toInt,
+          windDirection.toInt,
+          windGust.toDouble,
+          windSpeed.toDouble,
+          indoorTemperature.toDouble,
+          indoorHumidity.toInt
+        )
+      ).toOption
+    case _ => None
+  }
 
-  implicit val decoder: JsonDecoder[Measurement] = DeriveJsonDecoder.gen[Measurement]
+  implicit class MeasurementWrapper(private val measurement: Measurement) extends AnyVal {
+    def header: String = measurement.productElementNames.mkString(",")
+
+    def toLine: String = measurement.productIterator.map {
+      case Some(value) => value
+      case None        => ""
+      case rest        => rest
+    }
+      .mkString(",")
+  }
+
 }
