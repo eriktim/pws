@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        java: [ 'adopt@1.8' ]
+        java: [ 'adopt@1.11' ]
         scala: [ '2.13.3' ]
     steps:
       - name: Checkout current branch
@@ -20,6 +20,8 @@ jobs:
           fetch-depth: 0
       - name: Setup Scala and Java
         uses: olafurpg/setup-scala@v10
+        with:
+          java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
         uses: coursier/cache-action@v5
       - name: Build

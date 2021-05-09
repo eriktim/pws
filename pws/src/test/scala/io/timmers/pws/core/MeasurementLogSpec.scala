@@ -2,6 +2,7 @@ package io.timmers.pws.core
 
 import java.nio.file.Files
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import zio.Chunk
 import zio.test.Assertion.equalTo
@@ -14,14 +15,20 @@ object MeasurementLogSpec extends DefaultRunnableSpec {
     suite("MeasurementLog Spec")(
       testM("should append to readable file") {
         val measurement1 = measurement()
-        val measurement2 = measurement(rain = 1.0)
-        val measurement3 = measurement(rain = 2.0)
+        val measurement2 = measurement(timestamp = Instant.EPOCH.plus(1, ChronoUnit.DAYS))
+        val measurement3 = measurement(timestamp = Instant.EPOCH.plus(500, ChronoUnit.DAYS))
+        val measurement4 = measurement(rain = 1.0)
+        val measurement5 = measurement(rain = 2.0)
         for {
           _     <- MeasurementLog.append(measurement1)
           _     <- MeasurementLog.append(measurement2)
-          lines <- MeasurementLog.read().runCollect
           _     <- MeasurementLog.append(measurement3)
-        } yield assert(lines)(equalTo(Chunk(measurement1, measurement2)))
+          _     <- MeasurementLog.append(measurement4)
+          lines <- MeasurementLog.read().runCollect
+          _     <- MeasurementLog.append(measurement5)
+        } yield assert(lines)(
+          equalTo(Chunk(measurement1, measurement4, measurement2, measurement3))
+        )
       }
     ).provideCustomLayer(
       liveEnvironment >>> MeasurementLog.local(Files.createTempDirectory("pws-").toString)
