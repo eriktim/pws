@@ -1,7 +1,7 @@
-val zioVersion     = "1.0.4-2"
+val zioVersion     = "1.0.7"
 val zioJsonVersion = "0.1.4"
 
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.5"
 
 enablePlugins(JavaAppPackaging)
 
@@ -14,7 +14,7 @@ addCommandAlias("prepare", "fix; fmt")
 lazy val root =
   project
     .in(file("."))
-    .settings(mainClass in Compile := Some("io.timmers.pws.Application"))
+    .settings(Compile / mainClass := Some("io.timmers.pws.Application"))
     .aggregate(pwsApi)
     .dependsOn(pwsApi)
 
@@ -29,7 +29,7 @@ lazy val pwsApi =
 def module(moduleName: String, fileName: String): Project =
   Project(moduleName, file(fileName))
     .settings(
-      scalaVersion := "2.13.3",
+      scalaVersion := "2.13.5",
       organization := "io.timmers",
       name := moduleName,
       version := "0.1.0",
@@ -57,7 +57,7 @@ def module(moduleName: String, fileName: String): Project =
       )
     )
 
-assemblyMergeStrategy in assembly := {
+assembly / assemblyMergeStrategy := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x                             => MergeStrategy.first
 }
