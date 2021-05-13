@@ -110,7 +110,7 @@ case class QueryStringParameters(
     }
 
   private def inchOfMercuryToPascal(inches: Double): Double =
-    3376.85 * inches // TODO depends on temp?
+    3386.389 * inches
 
   private def inchToMm(inches: Double): Double =
     25.4 * inches
