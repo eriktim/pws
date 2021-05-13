@@ -61,7 +61,7 @@ case class QueryStringParameters(
 
   def toMeasurement: Either[String, Measurement] =
     for {
-      timestamp                  <- timestamp(dateutc)
+      timestamp                  <- parseDateUtc(dateutc)
       absoluteAtmosphericPressure = inchOfMercuryToPascal(absbaromin)
       atmosphericPressure         = inchOfMercuryToPascal(baromin)
       rain                        = inchToMm(rainin)
@@ -95,16 +95,13 @@ case class QueryStringParameters(
       indoorhumidity
     )
 
-  private def timestamp(dateUtc: String): Either[String, Instant] =
+  private def parseDateUtc(dateUtc: String): Either[String, Instant] =
     dateUtc match {
       case "now" => Left("Date 'now' is not supported")
       case _ =>
         Try(Instant.from(DateTimeFormat.parse(dateUtc)))
           .fold(
-            failure => {
-              println(failure) // TODO logging
-              Left(s"Invalid date: $dateUtc")
-            },
+            _ => Left(s"Invalid date: $dateUtc"),
             Right(_)
           )
     }
