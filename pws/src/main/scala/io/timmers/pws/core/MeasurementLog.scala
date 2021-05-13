@@ -1,15 +1,17 @@
 package io.timmers.pws.core
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{ Files, Path, Paths, StandardOpenOption }
+import java.io.IOException
+import java.nio.file.StandardOpenOption
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.stream.Stream
 
 import zio.blocking.Blocking
-import zio.stream.{ Transducer, ZStream }
+import zio.nio.core.file.Path
+import zio.nio.file.Files
+import zio.stream.ZStream
 import zio.{ Has, ZIO, ZLayer }
 
+// TODO Non-blocking, IOException
 trait MeasurementLog {
   def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit]
 
@@ -26,49 +28,42 @@ object MeasurementLog {
   def local(directory: String): ZLayer[Blocking, Nothing, Has[MeasurementLog]] =
     ZLayer.succeed {
       new MeasurementLog {
-        override def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit] = ZIO.effect {
+        override def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit] = {
           val timestamp = measurement.timestamp.atZone(ZoneOffset.UTC)
-          val path = Paths.get(
-            s"$directory/${timestamp.getYear}/${DateTimeFormatter.ISO_LOCAL_DATE.format(timestamp)}.log"
+          val path = Path(
+            directory,
+            timestamp.getYear.toString,
+            s"${DateTimeFormatter.ISO_LOCAL_DATE.format(timestamp)}.log"
           )
-          if (!Files.exists(path)) {
-            if (!Files.exists(path.getParent)) {
-              Files.createDirectories(path.getParent)
-            }
-            Files.writeString(path, s"${measurement.header}\n")
-          }
-          Files.writeString(
-            path,
-            s"${measurement.toLine}\n",
-            StandardCharsets.UTF_8,
-            StandardOpenOption.APPEND
-          )
+          for {
+            directory <- ZIO.fromOption(path.parent).orElseFail(new IOException())
+            _         <- Files.createDirectories(directory).unlessM(Files.exists(directory))
+            _ <-
+              Files.writeLines(path, Seq(s"${measurement.header}")).unlessM(Files.exists(path))
+            _ <- Files.writeLines(
+                   path,
+                   Seq(measurement.toLine),
+                   openOptions = Set(StandardOpenOption.APPEND)
+                 )
+          } yield ()
         }
 
         override def read(): ZStream[Blocking, Throwable, Measurement] = {
-          val paths = ZIO.effect {
-            val path = Paths.get(directory)
-            Files
-              .list(path)
-              .flatMap(p => if (Files.isDirectory(p)) Files.list(p) else Stream.empty)
-              .sorted()
-          }
-          ZStream
-            .fromJavaStreamEffect(paths)
+          val path = Path(directory)
+          Files
+            .list(path)
+            .flatMap(Files.list)
             .flatMap(readFile)
         }
 
         private def readFile(path: Path): ZStream[Blocking, Throwable, Measurement] =
           ZStream
-            .fromFile(path)
-            .aggregate(Transducer.utf8Decode)
-            .aggregate(Transducer.splitLines)
-            .drop(1)
+            .fromIteratorEffect(Files.readAllLines(path).map(_.drop(1).reverseIterator))
             .flatMap(line =>
               Measurement
                 .fromLine(line)
                 .map(ZStream.succeed(_))
-                .getOrElse(ZStream.fail(new RuntimeException(s"Failed parsing $line")))
+                .getOrElse(ZStream.fail(new IOException(s"Failed parsing $line")))
             )
       }
     }
