@@ -1,5 +1,6 @@
 val zioVersion     = "1.0.7"
 val zioJsonVersion = "0.1.4"
+val zioNioVersion  = "1.0.0-RC10"
 
 scalaVersion := "2.13.5"
 
@@ -22,7 +23,8 @@ lazy val pwsApi =
   module("pws-api", "pws")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-json" % zioJsonVersion
+        "dev.zio" %% "zio-json" % zioJsonVersion,
+        "dev.zio" %% "zio-nio"  % zioNioVersion
       )
     )
 
