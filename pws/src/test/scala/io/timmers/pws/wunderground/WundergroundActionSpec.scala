@@ -1,4 +1,4 @@
-package io.timmers.pws.function
+package io.timmers.pws.wunderground
 
 import java.time.Instant
 
@@ -7,16 +7,15 @@ import io.timmers.pws.core.Measurement
 import zio.test.Assertion.equalTo
 import zio.test.{ DefaultRunnableSpec, ZSpec, assert }
 
-object QueryStringParametersSpec extends DefaultRunnableSpec {
+object WundergroundActionSpec extends DefaultRunnableSpec {
 
   def spec: ZSpec[Environment, Failure] =
-    suite("QueryStringParameters Spec")(
+    suite("WundergroundAction Spec")(
       test("should convert to Measurement") {
-        val params = QueryStringParameters(
-          "ID",
-          "secret",
+        val params = WundergroundAction(
+          "test-id",
+          "test-password",
           "1970-01-01 00:00:00",
-          0,
           30.000,
           "updateraw",
           29.988,
@@ -32,6 +31,7 @@ object QueryStringParametersSpec extends DefaultRunnableSpec {
           "EasyWeatherV1.4.6",
           11.62,
           53.4,
+          0,
           0.000,
           53.4,
           77,

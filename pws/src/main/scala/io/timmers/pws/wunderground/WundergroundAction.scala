@@ -1,4 +1,4 @@
-package io.timmers.pws.function
+package io.timmers.pws.wunderground
 
 import java.time.format.DateTimeFormatterBuilder
 import java.time.{ Instant, ZoneOffset }
@@ -7,17 +7,14 @@ import scala.util.Try
 
 import io.timmers.pws.core.Measurement
 
-import zio.json.{ DeriveJsonDecoder, JsonDecoder, jsonField }
-
 // https://support.weather.com/s/article/PWS-Upload-Protocol?language=en_US
-case class QueryStringParameters(
+case class WundergroundAction(
   // ID as registered by wunderground.com (required)
-  @jsonField("ID") id: String,
+  id: String,
   // Station Key registered with this PWS ID, case sensitive (required)
-  @jsonField("PASSWORD") password: String,
+  password: String,
   // YYYY-MM-DD HH:MM:SS in UTC or "now" (required)
   dateutc: String,
-  @jsonField("UV") uv: Int,
   absbaromin: Double,
   // "updateraw"
   action: String,
@@ -44,6 +41,7 @@ case class QueryStringParameters(
   solarradiation: Double,
   // F outdoor temperature
   tempf: Double,
+  uv: Int,
   // rain inches over the past week
   weeklyrainin: Double,
   windchillf: Double,
@@ -96,15 +94,7 @@ case class QueryStringParameters(
     )
 
   private def parseDateUtc(dateUtc: String): Either[String, Instant] =
-    dateUtc match {
-      case "now" => Left("Date 'now' is not supported")
-      case _ =>
-        Try(Instant.from(DateTimeFormat.parse(dateUtc)))
-          .fold(
-            _ => Left(s"Invalid date: $dateUtc"),
-            Right(_)
-          )
-    }
+    Try(Instant.from(DateTimeFormat.parse(dateUtc))).fold(e => Left(e.getMessage), Right(_))
 
   private def inchOfMercuryToPascal(inches: Double): Double =
     3386.389 * inches
@@ -119,7 +109,56 @@ case class QueryStringParameters(
     1609.344 * mph / 3600
 }
 
-object QueryStringParameters {
-  implicit val decoder: JsonDecoder[QueryStringParameters] =
-    DeriveJsonDecoder.gen[QueryStringParameters]
+object WundergroundAction {
+  def fromMap(data: Map[String, String]): Option[WundergroundAction] = for {
+    id             <- data.get("ID")
+    password       <- data.get("PASSWORD")
+    dateutc        <- data.get("dateutc")
+    absbaromin     <- data.get("absbaromin").map(_.toDouble)
+    action         <- data.get("action")
+    baromin        <- data.get("baromin").map(_.toDouble)
+    dailyrainin    <- data.get("dailyrainin").map(_.toDouble)
+    dewptf         <- data.get("dewptf").map(_.toDouble)
+    humidity       <- data.get("humidity").map(_.toInt)
+    indoorhumidity <- data.get("indoorhumidity").map(_.toInt)
+    indoortempf    <- data.get("indoortempf").map(_.toDouble)
+    monthlyrainin  <- data.get("monthlyrainin").map(_.toDouble)
+    rainin         <- data.get("rainin").map(_.toDouble)
+    realtime       <- data.get("realtime").map(_.toInt)
+    rtfreq         <- data.get("rtfreq").map(_.toInt)
+    softwaretype   <- data.get("softwaretype")
+    solarradiation <- data.get("solarradiation").map(_.toDouble)
+    tempf          <- data.get("tempf").map(_.toDouble)
+    uv             <- data.get("UV").map(_.toInt)
+    weeklyrainin   <- data.get("weeklyrainin").map(_.toDouble)
+    windchillf     <- data.get("windchillf").map(_.toDouble)
+    winddir        <- data.get("winddir").map(_.toInt)
+    windgustmph    <- data.get("windgustmph").map(_.toDouble)
+    windspeedmph   <- data.get("windspeedmph").map(_.toDouble)
+  } yield WundergroundAction(
+    id = id,
+    password = password,
+    dateutc = dateutc,
+    uv = uv,
+    absbaromin = absbaromin,
+    action = action,
+    baromin = baromin,
+    dailyrainin = dailyrainin,
+    dewptf = dewptf,
+    humidity = humidity,
+    indoorhumidity = indoorhumidity,
+    indoortempf = indoortempf,
+    monthlyrainin = monthlyrainin,
+    rainin = rainin,
+    realtime = realtime,
+    rtfreq = rtfreq,
+    softwaretype = softwaretype,
+    solarradiation = solarradiation,
+    tempf = tempf,
+    weeklyrainin = weeklyrainin,
+    windchillf = windchillf,
+    winddir = winddir,
+    windgustmph = windgustmph,
+    windspeedmph = windspeedmph
+  )
 }
