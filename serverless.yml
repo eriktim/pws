@@ -11,13 +11,15 @@ provider:
   lambdaHashingVersion: 20201221
   environment:
     PWS_PATH: /mnt/efs
+    PWS_ID: ${env:PWS_ID}
+    PWS_PASSWORD: ${env:PWS_PASSWORD}
 
 package:
   artifact: target/scala-2.13/root-assembly-0.1.0-SNAPSHOT.jar
 
 functions:
   logMeasurement:
-    handler: io.timmers.pws.function.Function::logMeasurement
+    handler: io.timmers.pws.function.LogMeasurementFunction::handle
     memorySize: 512
     timeout: 15
     fileSystemConfig:
@@ -35,7 +37,7 @@ functions:
           path: /log
           method: get
   rawMeasurements:
-    handler: io.timmers.pws.function.Function::rawMeasurements
+    handler: io.timmers.pws.function.RawMeasurementsFunction::handle
     memorySize: 512
     timeout: 30
     fileSystemConfig:

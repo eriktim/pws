@@ -3,24 +3,19 @@ package io.timmers.pws.core
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import zio.nio.core.file.Path
-import zio.nio.file.Files
+import zio.Chunk
 import zio.test.Assertion.equalTo
-import zio.test.environment.liveEnvironment
 import zio.test.{ DefaultRunnableSpec, ZSpec, assert }
-import zio.{ Chunk, Runtime }
 
 object MeasurementLogSpec extends DefaultRunnableSpec {
-  val testPath: Path = Runtime.default.unsafeRun(Files.createTempDirectory(Some("pws-"), Seq()))
-
   def spec: ZSpec[Environment, Failure] =
     suite("MeasurementLog Spec")(
       testM("should append to readable file") {
-        val measurement1 = measurement()
-        val measurement2 = measurement(timestamp = Instant.EPOCH.plus(1, ChronoUnit.MINUTES))
-        val measurement3 = measurement(timestamp = Instant.EPOCH.plus(1, ChronoUnit.DAYS))
-        val measurement4 = measurement(timestamp = Instant.EPOCH.plus(500, ChronoUnit.DAYS))
-        val measurement5 = measurement(timestamp = Instant.EPOCH.plus(1000, ChronoUnit.DAYS))
+        val measurement1 = createMeasurement()
+        val measurement2 = createMeasurement(timestamp = Instant.EPOCH.plus(1, ChronoUnit.MINUTES))
+        val measurement3 = createMeasurement(timestamp = Instant.EPOCH.plus(1, ChronoUnit.DAYS))
+        val measurement4 = createMeasurement(timestamp = Instant.EPOCH.plus(500, ChronoUnit.DAYS))
+        val measurement5 = createMeasurement(timestamp = Instant.EPOCH.plus(1000, ChronoUnit.DAYS))
         for {
           _     <- MeasurementLog.append(measurement1)
           _     <- MeasurementLog.append(measurement2)
@@ -32,9 +27,9 @@ object MeasurementLogSpec extends DefaultRunnableSpec {
           equalTo(Chunk(measurement1, measurement2, measurement3, measurement4))
         )
       }
-    ).provideCustomLayer(liveEnvironment >>> MeasurementLog.local(testPath.toString))
+    ).provideCustomLayer(testEnvironment)
 
-  private def measurement(
+  private def createMeasurement(
     timestamp: Instant = Instant.EPOCH,
     absoluteAtmosphericPressure: Double = 0.0,
     atmosphericPressure: Double = 0.0,
