@@ -16,7 +16,7 @@ class LogMeasurementFunction extends Lambda {
     password <- system.envOrElse("PWS_PASSWORD", "")
     measurement <- ZIO
                      .fromEither(toMeasurement(id, password)(request))
-                     .mapError(LogMeasurementError)
+                     .mapError(LogMeasurementError(_))
     _ <- putStrLn(s"Received measurement: $measurement")
     _ <- MeasurementLog
            .append(measurement)

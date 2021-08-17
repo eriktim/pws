@@ -31,7 +31,7 @@ object MeasurementLog {
     system
       .env("PWS_PATH")
       .flatMap(ZIO.fromOption(_))
-      .bimap(
+      .mapBoth(
         _ => MissingLogPath,
         directory =>
           new MeasurementLog {

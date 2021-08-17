@@ -1,8 +1,8 @@
-val zioVersion     = "1.0.7"
-val zioJsonVersion = "0.1.4"
-val zioNioVersion  = "1.0.0-RC10"
+val zioVersion     = "1.0.10"
+val zioJsonVersion = "0.2.0-M1"
+val zioNioVersion  = "1.0.0-RC11"
 
-scalaVersion := "2.13.5"
+scalaVersion := "3.0.1"
 
 enablePlugins(JavaAppPackaging)
 
@@ -31,12 +31,12 @@ lazy val pwsApi =
 def module(moduleName: String, fileName: String): Project =
   Project(moduleName, file(fileName))
     .settings(
-      scalaVersion := "2.13.5",
+      scalaVersion := "3.0.1",
       organization := "io.timmers",
       name := moduleName,
       version := "0.1.0",
       scalacOptions := Seq(
-        "-Ywarn-unused:_",
+//        "-Ywarn-unused:_",
         "-Xfatal-warnings"
       ),
       libraryDependencies ++= Seq(
