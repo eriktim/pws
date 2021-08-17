@@ -1,26 +1,24 @@
 package io.timmers.pws.core
 
+import io.timmers.pws.core.PwsError.MissingLogPath
+import zio.blocking.Blocking
+import zio.nio.core.file.Path
+import zio.nio.file.Files
+import zio.stream.ZStream
+import zio.{Has, ZIO, ZLayer, system}
+
 import java.io.IOException
 import java.nio.file.StandardOpenOption
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-import io.timmers.pws.core.PwsError.MissingLogPath
-
-import zio.blocking.Blocking
-import zio.nio.core.file.Path
-import zio.nio.file.Files
-import zio.stream.ZStream
-import zio.{ Has, ZIO, ZLayer, system }
-
 // TODO Non-blocking, IOException
-trait MeasurementLog {
+trait MeasurementLog:
   def append(measurement: Measurement): ZIO[Blocking, Throwable, Unit]
 
   def read(): ZStream[Blocking, Throwable, Measurement]
-}
 
-object MeasurementLog {
+object MeasurementLog:
   def append(measurement: Measurement): ZIO[Has[MeasurementLog] with Blocking, Throwable, Unit] =
     ZIO.accessM(_.get.append(measurement))
 
@@ -75,4 +73,3 @@ object MeasurementLog {
           }
       )
       .toLayer
-}

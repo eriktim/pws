@@ -1,7 +1,6 @@
 package io.timmers.pws.core
 
 import java.time.Instant
-
 import scala.util.Try
 
 case class Measurement(
@@ -25,7 +24,7 @@ case class Measurement(
   indoorHumidity: Int
 )
 
-object Measurement {
+object Measurement:
   def fromLine(line: String): Option[Measurement] = line.split(",") match {
     case Array(
           timestamp,
@@ -82,5 +81,3 @@ object Measurement {
     }
       .mkString(",")
   }
-
-}

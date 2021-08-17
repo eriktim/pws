@@ -1,14 +1,14 @@
 package io.timmers.pws.aws
 
-import java.io.{ ByteArrayOutputStream, InputStream }
-import java.nio.charset.StandardCharsets
-
 import zio.json.DecoderOps
 import zio.test.Assertion.equalTo
-import zio.test.{ DefaultRunnableSpec, ZSpec, assert }
-import zio.{ ZEnv, ZIO }
+import zio.test.{DefaultRunnableSpec, ZSpec, assert}
+import zio.{ZEnv, ZIO}
 
-object LambdaSpec extends DefaultRunnableSpec {
+import java.io.{ByteArrayOutputStream, InputStream}
+import java.nio.charset.StandardCharsets
+
+object LambdaSpec extends DefaultRunnableSpec:
   def spec: ZSpec[Environment, Failure] =
     suite("Lambda Spec")(
       test("should not accept empty requests") {
@@ -32,10 +32,8 @@ object LambdaSpec extends DefaultRunnableSpec {
       .fromJson[HttpResponse]
       .getOrElse(HttpResponse.badRequest)
   }
-}
 
-class EchoLambda extends Lambda {
+class EchoLambda extends Lambda:
   override def handleRequest(
     request: HttpRequest
   ): ZIO[ZEnv, Throwable, HttpResponse] = ZIO.succeed(HttpResponse(body = request.body))
-}

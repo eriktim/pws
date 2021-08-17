@@ -1,20 +1,13 @@
 package io.timmers.pws
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream, IOException }
+import zio.Runtime
+import zio.json.*
+import zio.test.environment.{TestSystem, liveEnvironment}
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, IOException}
 import java.nio.charset.StandardCharsets
 
-import zio.Runtime
-import zio.json.{
-  DecoderOps,
-  DeriveJsonDecoder,
-  DeriveJsonEncoder,
-  EncoderOps,
-  JsonDecoder,
-  JsonEncoder
-}
-import zio.test.environment.{ TestSystem, liveEnvironment }
-
-package object aws {
+package object aws:
   def runLambda(
     lambda: Lambda,
     request: HttpRequest,
@@ -33,4 +26,3 @@ package object aws {
 
   implicit val requestEncoder: JsonEncoder[HttpRequest]   = DeriveJsonEncoder.gen[HttpRequest]
   implicit val responseDecoder: JsonDecoder[HttpResponse] = DeriveJsonDecoder.gen[HttpResponse]
-}

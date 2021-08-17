@@ -1,14 +1,13 @@
 package io.timmers.pws.function
 
-import io.timmers.pws.aws.{ HttpRequest, HttpResponse, Lambda }
+import io.timmers.pws.aws.{HttpRequest, HttpResponse, Lambda}
 import io.timmers.pws.core.PwsError.LogMeasurementError
-import io.timmers.pws.core.{ Measurement, MeasurementLog }
+import io.timmers.pws.core.{Measurement, MeasurementLog}
 import io.timmers.pws.wunderground.WundergroundAction
-
 import zio.console.putStrLn
-import zio.{ ZEnv, ZIO, system }
+import zio.{ZEnv, ZIO, system}
 
-class LogMeasurementFunction extends Lambda {
+class LogMeasurementFunction extends Lambda:
   override protected def handleRequest(
     request: HttpRequest
   ): ZIO[ZEnv, Throwable, HttpResponse] = for {
@@ -37,4 +36,3 @@ class LogMeasurementFunction extends Lambda {
           action.toMeasurement
         }
     }
-}

@@ -1,11 +1,10 @@
 package io.timmers.pws.wunderground
 
-import java.time.format.DateTimeFormatterBuilder
-import java.time.{ Instant, ZoneOffset }
-
-import scala.util.Try
-
 import io.timmers.pws.core.Measurement
+
+import java.time.format.DateTimeFormatterBuilder
+import java.time.{Instant, ZoneOffset}
+import scala.util.Try
 
 // https://support.weather.com/s/article/PWS-Upload-Protocol?language=en_US
 case class WundergroundAction(
@@ -51,7 +50,7 @@ case class WundergroundAction(
   windgustmph: Double,
   // mph instantaneous wind speed
   windspeedmph: Double
-) {
+):
   private val DateTimeFormat = new DateTimeFormatterBuilder()
     .appendPattern("yyyy-MM-dd HH:mm:ss")
     .toFormatter()
@@ -107,9 +106,10 @@ case class WundergroundAction(
 
   private def mphToMps(mph: Double): Double =
     1609.344 * mph / 3600
-}
 
-object WundergroundAction {
+object WundergroundAction:
+  // FIXME constants
+
   def fromMap(data: Map[String, String]): Option[WundergroundAction] = for {
     id             <- data.get("ID")
     password       <- data.get("PASSWORD")
@@ -161,4 +161,3 @@ object WundergroundAction {
     windgustmph = windgustmph,
     windspeedmph = windspeedmph
   )
-}
